@@ -1,0 +1,72 @@
+name: Elvin Employee App - CI Security
+
+on:
+  push:
+    branches:
+      - "**"
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Unit Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest
+
+      - name: Run unit tests
+        working-directory: backend
+        env:
+          DATABASE_URL: sqlite:///test.db
+        run: pytest -v
+              - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit SAST scan
+        run: |
+          bandit -r backend -f json -o bandit-report.json
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run SCA dependency scan
+        run: |
+          pip-audit -r backend/requirements.txt
+
+      - name: Run Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+
+      - name: Build backend Docker image
+        run: |
+          docker build -t employee-backend:${{ github.sha }} ./backend
+
+      - name: Run Trivy container image scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: employee-backend:${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Generate SBOM with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: employee-backend:${{ github.sha }}
+          format: cyclonedx
+          output: employee-backend-sbom.json
+          exit-code: "0"
