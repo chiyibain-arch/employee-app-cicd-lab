@@ -244,4 +244,6 @@ def get_stats():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app_host = os.environ.get("APP_HOST", "127.0.0.1")
+    app_port = int(os.environ.get("APP_PORT", "5000"))
+    app.run(host=app_host, port=app_port)
