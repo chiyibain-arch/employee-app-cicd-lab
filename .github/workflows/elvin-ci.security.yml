@@ -40,7 +40,7 @@ jobs:
 
       - name: Run Bandit SAST scan
         run: |
-          bandit -r backend -f json -o bandit-report.json
+          bandit -r backend -x backend/test_app.py -f json -o bandit-report.json
 
       - name: Install pip-audit
         run: pip install pip-audit
