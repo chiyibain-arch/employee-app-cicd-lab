@@ -64,6 +64,14 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
 
+      - name: Run Snyk container image scan
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: employee-backend:${{ github.sha }}
+          args: --severity-threshold=high
+
       - name: Generate SBOM with Trivy
         uses: aquasecurity/trivy-action@master
         with:
